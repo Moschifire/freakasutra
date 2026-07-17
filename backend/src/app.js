@@ -2,6 +2,8 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
+// Import routes
+const authRoutes = require('./routes/authRoutes');
 require('dotenv').config();
 
 const app = express();
@@ -9,7 +11,10 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors());
-app.use(express.json()); // Parses incoming JSON requests
+app.use(express.json());
+
+// Mount Routes
+app.use('/v1/auth', authRoutes);
 
 // Basic Health Check Route
 app.get('/health', (req, res) => {
@@ -19,12 +24,11 @@ app.get('/health', (req, res) => {
 // Test Database Connection
 const testDbConnection = async () => {
     try {
-        const res = await db.query('SELECT NOW()');
+        await db.query('SELECT NOW()');
         console.log('Successfully connected to Supabase Database!');
-        console.log('Database Server Time:', res.rows[0].now);
     } catch (err) {
         console.error('Database connection failed:', err.message);
-        process.exit(1); // Stop the server if database connection fails
+        process.exit(1);
     }
 };
 
