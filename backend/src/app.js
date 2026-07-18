@@ -2,8 +2,11 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
+
 // Import routes
 const authRoutes = require('./routes/authRoutes');
+const cardRoutes = require('./routes/cardRoutes'); // Correct import
+
 require('dotenv').config();
 
 const app = express();
@@ -15,6 +18,7 @@ app.use(express.json());
 
 // Mount Routes
 app.use('/v1/auth', authRoutes);
+app.use('/v1/cards', cardRoutes); // Mount card and consent routes cleanly
 
 // Basic Health Check Route
 app.get('/health', (req, res) => {
