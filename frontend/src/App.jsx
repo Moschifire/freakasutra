@@ -21,6 +21,30 @@ function App() {
   const [showAnalytics, setShowAnalytics] = useState(false); // Managed for Dashboard launch
   const [activeCard, setActiveCard] = useState(null);
 
+  // PWA Install Event state
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
+
+  useEffect(() => {
+    // Listen for the browser's install prompt event
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBtn(true);
+    });
+  }, []);
+
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.log('User installed Freakasutra');
+    }
+    setDeferredPrompt(null);
+    setShowInstallBtn(false);
+  };
+
   useEffect(() => {
     const initializeApp = async () => {
       const storedProfile = localStorage.getItem('user_profile');
@@ -167,6 +191,17 @@ function App() {
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             Secure Connection Active
           </div>
+          {showInstallBtn && (
+            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 flex flex-col gap-2.5 text-center">
+              <span className="text-xs text-pink-400 font-semibold">Install Freakasutra to your home screen for full standalone mobile play.</span>
+              <button
+                onClick={handleInstallPWA}
+                className="bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors"
+              >
+                Install App Now
+              </button>
+            </div>
+          )}
           <h1 className="text-2xl font-bold text-slate-100">Welcome to Freakasutra</h1>
           <p className="text-sm text-slate-400">Synchronized Profile Dashboard</p>
         </div>
