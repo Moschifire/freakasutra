@@ -33,7 +33,8 @@ const testDbConnection = async () => {
         await db.query('SELECT NOW()');
         console.log('Successfully connected to Supabase Database!');
     } catch (err) {
-        console.error('Database connection failed:', err.message);
+        console.error('Database connection failed! Full error details:');
+        console.error(err);
         process.exit(1);
     }
 };

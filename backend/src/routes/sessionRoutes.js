@@ -8,5 +8,6 @@ const authMiddleware = require('../middleware/authMiddleware');
 router.use(authMiddleware);
 
 router.post('/log', sessionController.logSession);
+router.get('/', sessionController.getSessions);
 
 module.exports = router;

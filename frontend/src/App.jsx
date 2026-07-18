@@ -4,6 +4,7 @@ import Auth from './components/Auth';
 import ConsentSetup from './components/ConsentSetup';
 import CardShuffler from './components/CardShuffler';
 import ActiveTimer from './components/ActiveTimer';
+import AnalyticsDashboard from './components/AnalyticsDashboard'; // Import Dashboard
 import { decryptData } from './utils/crypto';
 
 const API_URL = 'http://localhost:5000/v1/cards/consent';
@@ -17,7 +18,8 @@ function App() {
   // Navigation views
   const [showConsentSetup, setShowConsentSetup] = useState(false);
   const [showShuffler, setShowShuffler] = useState(false);
-  const [activeCard, setActiveCard] = useState(null); // Managed for ActiveTimer launch
+  const [showAnalytics, setShowAnalytics] = useState(false); // Managed for Dashboard launch
+  const [activeCard, setActiveCard] = useState(null);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -29,7 +31,6 @@ function App() {
         setProfile(JSON.parse(storedProfile));
         setEncryptionKey(storedKey);
 
-        // Fetch existing boundaries to initialize memory state
         await fetchConsentBoundaries(storedToken, storedKey);
       }
       setLoading(false);
@@ -68,7 +69,6 @@ function App() {
   };
 
   const handleSessionLogged = () => {
-    // Session is complete & encrypted/synced to database. Return to deck.
     setActiveCard(null);
     setShowShuffler(true);
   };
@@ -82,6 +82,7 @@ function App() {
     setBoundaries(null);
     setShowConsentSetup(false);
     setShowShuffler(false);
+    setShowAnalytics(false);
     setActiveCard(null);
   };
 
@@ -102,7 +103,7 @@ function App() {
     );
   }
 
-  // 1. Active Intimacy Timer View (Overlays everything during physical act)
+  // 1. Active Timer View
   if (activeCard) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
@@ -116,7 +117,7 @@ function App() {
     );
   }
 
-  // 2. Consent/Boundary Checklist view
+  // 2. Consent Setup View
   if (showConsentSetup) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
@@ -129,7 +130,7 @@ function App() {
     );
   }
 
-  // 3. Shuffler / Deck drawing view
+  // 3. Shuffler Deck View
   if (showShuffler) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
@@ -137,9 +138,21 @@ function App() {
           boundaries={boundaries}
           onStartAct={(card) => {
             setShowShuffler(false);
-            setActiveCard(card); // Mounts the ActiveTimer
+            setActiveCard(card);
           }}
           onCancel={() => setShowShuffler(false)}
+        />
+      </div>
+    );
+  }
+
+  // 4. Decrypted Analytics View
+  if (showAnalytics) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6">
+        <AnalyticsDashboard
+          derivedKey={encryptionKey}
+          onCancel={() => setShowAnalytics(false)}
         />
       </div>
     );
@@ -199,6 +212,15 @@ function App() {
               className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm"
             >
               Configure Boundaries First
+            </button>
+          )}
+
+          {boundaries && (
+            <button
+              onClick={() => setShowAnalytics(true)}
+              className="w-full bg-slate-100 hover:bg-white text-slate-900 font-bold py-2.5 px-4 rounded-lg transition-colors text-sm shadow-md"
+            >
+              View Intimacy Analytics & Wrapped
             </button>
           )}
 

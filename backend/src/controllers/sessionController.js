@@ -26,3 +26,23 @@ exports.logSession = async (req, res) => {
         res.status(500).json({ error: 'Server error saving secure session log.' });
     }
 };
+
+// @route   GET /v1/sessions
+// @desc    Retrieve all encrypted session logs for the authenticated user
+// @access  Protected
+exports.getSessions = async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT log_id, encrypted_payload, logged_date, logged_month_year, created_at 
+       FROM secure_activity_logs 
+       WHERE user_id = $1 
+       ORDER BY logged_date DESC`,
+      [req.user.id]
+    );
+
+    res.status(200).json({ count: result.rows.length, logs: result.rows });
+  } catch (err) {
+    console.error('Retrieve Sessions Error:', err.message);
+    res.status(500).json({ error: 'Server error retrieving session logs.' });
+  }
+};
