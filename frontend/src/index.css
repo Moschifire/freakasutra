@@ -1,0 +1,10 @@
+/* src/index.css */
+@import "tailwindcss";
+
+body {
+  background-color: #0f172a;
+  /* Slate 900 for a dark, discreet theme */
+  color: #f1f5f9;
+  font-family: system-ui, sans-serif;
+  margin: 0;
+}
