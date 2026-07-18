@@ -2,8 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import Auth from './components/Auth';
 import ConsentSetup from './components/ConsentSetup';
+import CardShuffler from './components/CardShuffler';
 import { decryptData } from './utils/crypto';
 
+// Adjust this port (5000 or 5001) to match your backend port configuration
 const API_URL = 'http://localhost:5000/v1/cards/consent';
 
 function App() {
@@ -12,8 +14,9 @@ function App() {
   const [boundaries, setBoundaries] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Navigation states
+  // Navigation views
   const [showConsentSetup, setShowConsentSetup] = useState(false);
+  const [showShuffler, setShowShuffler] = useState(false);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -72,6 +75,7 @@ function App() {
     setEncryptionKey(null);
     setBoundaries(null);
     setShowConsentSetup(false);
+    setShowShuffler(false);
   };
 
   if (loading) {
@@ -98,6 +102,17 @@ function App() {
           derivedKey={encryptionKey}
           onSaveComplete={handleConsentSaved}
           onCancel={() => setShowConsentSetup(false)}
+        />
+      </div>
+    );
+  }
+
+  if (showShuffler) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6">
+        <CardShuffler
+          boundaries={boundaries}
+          onCancel={() => setShowShuffler(false)}
         />
       </div>
     );
@@ -143,12 +158,30 @@ function App() {
         </div>
 
         <div className="flex flex-col gap-3">
-          <button
-            onClick={() => setShowConsentSetup(true)}
-            className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm"
-          >
-            {boundaries ? 'Edit Boundary Checklist' : 'Configure Boundaries'}
-          </button>
+          {boundaries ? (
+            <button
+              onClick={() => setShowShuffler(true)}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm shadow-md"
+            >
+              Start Playing / Enter Shuffler
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowConsentSetup(true)}
+              className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm"
+            >
+              Configure Boundaries First
+            </button>
+          )}
+
+          {boundaries && (
+            <button
+              onClick={() => setShowConsentSetup(true)}
+              className="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+            >
+              Edit Boundary Checklist
+            </button>
+          )}
 
           <button
             onClick={handleLogout}
