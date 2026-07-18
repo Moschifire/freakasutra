@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 // Adjust the port (5000 or 5001) depending on which one your backend is running on
 const API_URL = 'http://localhost:5000/v1/cards';
 
-export default function CardShuffler({ boundaries, onCancel }) {
+export default function CardShuffler({ boundaries, onStartAct, onCancel }) {
     const [cards, setCards] = useState([]);
     const [filteredCards, setFilteredCards] = useState([]);
     const [currentCard, setCurrentCard] = useState(null);
@@ -150,13 +150,14 @@ export default function CardShuffler({ boundaries, onCancel }) {
                         </button>
                         <button
                             className="flex-1 bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
-                            onClick={() => alert('Starting Timer (Built in Sprint 3)')}
-                        >
-                            Start Act
-                        </button>
-                    </div>
+                            onClick={() => onStartAct(currentCard)} // Launches Active Timer
+            >
+                        Start Act
+                    </button>
                 </div>
-            )}
-        </div>
+                </div>
+    )
+}
+        </div >
     );
 }

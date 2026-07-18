@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import Auth from './components/Auth';
 import ConsentSetup from './components/ConsentSetup';
 import CardShuffler from './components/CardShuffler';
+import ActiveTimer from './components/ActiveTimer';
 import { decryptData } from './utils/crypto';
 
-// Adjust this port (5000 or 5001) to match your backend port configuration
 const API_URL = 'http://localhost:5000/v1/cards/consent';
 
 function App() {
@@ -17,6 +17,7 @@ function App() {
   // Navigation views
   const [showConsentSetup, setShowConsentSetup] = useState(false);
   const [showShuffler, setShowShuffler] = useState(false);
+  const [activeCard, setActiveCard] = useState(null); // Managed for ActiveTimer launch
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -46,7 +47,6 @@ function App() {
       const data = await response.json();
 
       if (response.ok && data.encrypted_boundaries) {
-        // Decrypt the payload locally using our key
         const decrypted = decryptData(data.encrypted_boundaries, key);
         if (decrypted) setBoundaries(decrypted);
       }
@@ -67,6 +67,12 @@ function App() {
     setShowConsentSetup(false);
   };
 
+  const handleSessionLogged = () => {
+    // Session is complete & encrypted/synced to database. Return to deck.
+    setActiveCard(null);
+    setShowShuffler(true);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('jwt_token');
     localStorage.removeItem('derived_key');
@@ -76,6 +82,7 @@ function App() {
     setBoundaries(null);
     setShowConsentSetup(false);
     setShowShuffler(false);
+    setActiveCard(null);
   };
 
   if (loading) {
@@ -86,7 +93,7 @@ function App() {
     );
   }
 
-  // Router view logic
+  // --- Router View Logic ---
   if (!profile) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
@@ -95,6 +102,21 @@ function App() {
     );
   }
 
+  // 1. Active Intimacy Timer View (Overlays everything during physical act)
+  if (activeCard) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6">
+        <ActiveTimer
+          card={activeCard}
+          derivedKey={encryptionKey}
+          onComplete={handleSessionLogged}
+          onCancel={() => setActiveCard(null)}
+        />
+      </div>
+    );
+  }
+
+  // 2. Consent/Boundary Checklist view
   if (showConsentSetup) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
@@ -107,17 +129,23 @@ function App() {
     );
   }
 
+  // 3. Shuffler / Deck drawing view
   if (showShuffler) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
         <CardShuffler
           boundaries={boundaries}
+          onStartAct={(card) => {
+            setShowShuffler(false);
+            setActiveCard(card); // Mounts the ActiveTimer
+          }}
           onCancel={() => setShowShuffler(false)}
         />
       </div>
     );
   }
 
+  // Default Dashboard View
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
       <div className="max-w-md w-full bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-xl space-y-6">
