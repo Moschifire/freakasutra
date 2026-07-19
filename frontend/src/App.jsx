@@ -4,46 +4,29 @@ import Auth from './components/Auth';
 import ConsentSetup from './components/ConsentSetup';
 import CardShuffler from './components/CardShuffler';
 import ActiveTimer from './components/ActiveTimer';
-import AnalyticsDashboard from './components/AnalyticsDashboard'; // Import Dashboard
+import AnalyticsDashboard from './components/AnalyticsDashboard';
 import { decryptData } from './utils/crypto';
 
-const API_URL = 'http://localhost:5000/v1/cards/consent';
+// Adjust these ports to match your running backend port configuration
+const CONSENT_API_URL = 'http://localhost:5000/v1/cards/consent';
+const UPGRADE_API_URL = 'http://localhost:5000/v1/auth/upgrade';
 
 function App() {
   const [profile, setProfile] = useState(null);
   const [encryptionKey, setEncryptionKey] = useState(null);
   const [boundaries, setBoundaries] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [upgrading, setUpgrading] = useState(false);
 
   // Navigation views
   const [showConsentSetup, setShowConsentSetup] = useState(false);
   const [showShuffler, setShowShuffler] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false); // Managed for Dashboard launch
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
 
   // PWA Install Event state
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
-
-  useEffect(() => {
-    // Listen for the browser's install prompt event
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setShowInstallBtn(true);
-    });
-  }, []);
-
-  const handleInstallPWA = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      console.log('User installed Freakasutra');
-    }
-    setDeferredPrompt(null);
-    setShowInstallBtn(false);
-  };
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -61,11 +44,17 @@ function App() {
     };
 
     initializeApp();
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBtn(true);
+    });
   }, []);
 
   const fetchConsentBoundaries = async (token, key) => {
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch(CONSENT_API_URL, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -95,6 +84,44 @@ function App() {
   const handleSessionLogged = () => {
     setActiveCard(null);
     setShowShuffler(true);
+  };
+
+  // 💳 MOCK PREMIUM UPGRADE FLOW
+  const handleUpgradeAccount = async () => {
+    setUpgrading(true);
+    const token = localStorage.getItem('jwt_token');
+
+    try {
+      const response = await fetch(UPGRADE_API_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Upgrade failed.');
+
+      // Update local state and storage cache with elevated subscription status
+      const updatedProfile = { ...profile, subscription_status: data.subscription_status };
+      setProfile(updatedProfile);
+      localStorage.setItem('user_profile', JSON.stringify(updatedProfile));
+
+      alert('Upgrade successful! You are now a Freakasutra Premium member.');
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setUpgrading(false);
+    }
+  };
+
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.log('User installed Freakasutra');
+    }
+    setDeferredPrompt(null);
+    setShowInstallBtn(false);
   };
 
   const handleLogout = () => {
@@ -186,25 +213,48 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
       <div className="max-w-md w-full bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-xl space-y-6">
+
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             Secure Connection Active
           </div>
-          {showInstallBtn && (
-            <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 flex flex-col gap-2.5 text-center">
-              <span className="text-xs text-pink-400 font-semibold">Install Freakasutra to your home screen for full standalone mobile play.</span>
-              <button
-                onClick={handleInstallPWA}
-                className="bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors"
-              >
-                Install App Now
-              </button>
-            </div>
-          )}
           <h1 className="text-2xl font-bold text-slate-100">Welcome to Freakasutra</h1>
           <p className="text-sm text-slate-400">Synchronized Profile Dashboard</p>
         </div>
+
+        {/* PWA Installer Prompt */}
+        {showInstallBtn && (
+          <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 flex flex-col gap-2.5 text-center">
+            <span className="text-xs text-pink-400 font-semibold">Install Freakasutra to your home screen for full standalone mobile play.</span>
+            <button
+              onClick={handleInstallPWA}
+              className="bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors"
+            >
+              Install App Now
+            </button>
+          </div>
+        )}
+
+        {/* 💳 PREMIUM TEASER / PAYWALL BOX */}
+        {profile.subscription_status === 'free' && (
+          <div className="bg-slate-900 border border-slate-700/50 rounded-xl p-5 space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">⭐</span>
+              <span className="text-xs font-bold text-slate-200 uppercase tracking-wide">Unlock Freakasutra Premium</span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Elevate your intimate connection. Upgrade now to unlock advanced sensory Kink & Fetish decks, unlimited custom cards, and detailed intimacy analytics.
+            </p>
+            <button
+              onClick={handleUpgradeAccount}
+              disabled={upgrading}
+              className="w-full bg-pink-600 hover:bg-pink-700 disabled:bg-pink-800 text-white text-xs font-bold py-2 rounded-lg transition-colors"
+            >
+              {upgrading ? 'Authorizing Mock payment...' : 'Upgrade Now ($8/month)'}
+            </button>
+          </div>
+        )}
 
         <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3 text-sm">
           <div className="flex justify-between border-b border-slate-800 pb-2">

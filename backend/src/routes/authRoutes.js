@@ -29,4 +29,6 @@ router.get('/me', authMiddleware, async (req, res) => {
     }
 });
 
+router.post('/upgrade', authMiddleware, authController.upgradeAccount);
+
 module.exports = router;

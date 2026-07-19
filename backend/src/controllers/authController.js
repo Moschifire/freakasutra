@@ -136,3 +136,24 @@ exports.login = async (req, res) => {
         res.status(500).json({ error: 'Server error during login.' });
     }
 };
+
+// @route   POST /v1/auth/upgrade
+// @desc    Mock upgrade endpoint to elevate user's subscription status for testing
+// @access  Protected
+exports.upgradeAccount = async (req, res) => {
+    try {
+        // Elevate subscription status to premium_monthly
+        await db.query(
+            "UPDATE user_profiles SET subscription_status = 'premium_monthly' WHERE user_id = $1",
+            [req.user.id]
+        );
+
+        res.status(200).json({
+            message: 'Account successfully upgraded to Freakasutra Premium!',
+            subscription_status: 'premium_monthly'
+        });
+    } catch (err) {
+        console.error('Upgrade Error:', err.message);
+        res.status(500).json({ error: 'Server error during mock account upgrade.' });
+    }
+};
