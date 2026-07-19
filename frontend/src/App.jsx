@@ -7,8 +7,7 @@ import ActiveTimer from './components/ActiveTimer';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import { decryptData } from './utils/crypto';
 
-// Adjust these ports to match your running backend port configuration
-const CONSENT_API_URL = 'http://localhost:5000/v1/cards/consent';
+const API_URL = 'http://localhost:5000/v1/cards/consent';
 const UPGRADE_API_URL = 'http://localhost:5000/v1/auth/upgrade';
 
 function App() {
@@ -18,13 +17,11 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
 
-  // Navigation views
   const [showConsentSetup, setShowConsentSetup] = useState(false);
   const [showShuffler, setShowShuffler] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [activeCard, setActiveCard] = useState(null);
 
-  // PWA Install Event state
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
 
@@ -37,7 +34,6 @@ function App() {
       if (storedProfile && storedKey && storedToken) {
         setProfile(JSON.parse(storedProfile));
         setEncryptionKey(storedKey);
-
         await fetchConsentBoundaries(storedToken, storedKey);
       }
       setLoading(false);
@@ -54,7 +50,7 @@ function App() {
 
   const fetchConsentBoundaries = async (token, key) => {
     try {
-      const response = await fetch(CONSENT_API_URL, {
+      const response = await fetch(API_URL, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -86,7 +82,6 @@ function App() {
     setShowShuffler(true);
   };
 
-  // 💳 MOCK PREMIUM UPGRADE FLOW
   const handleUpgradeAccount = async () => {
     setUpgrading(true);
     const token = localStorage.getItem('jwt_token');
@@ -100,12 +95,11 @@ function App() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Upgrade failed.');
 
-      // Update local state and storage cache with elevated subscription status
       const updatedProfile = { ...profile, subscription_status: data.subscription_status };
       setProfile(updatedProfile);
       localStorage.setItem('user_profile', JSON.stringify(updatedProfile));
 
-      alert('Upgrade successful! You are now a Freakasutra Premium member.');
+      alert('Upgrade successful! Welcome to Freakasutra Premium.');
     } catch (err) {
       alert(err.message);
     } finally {
@@ -137,10 +131,17 @@ function App() {
     setActiveCard(null);
   };
 
+  // Convert cold database subscription statuses into warm, descriptive tiers
+  const formatServiceClass = (status) => {
+    if (status === 'free') return 'The Awakening (Free)';
+    if (status === 'premium_monthly') return 'Deep Devotion (Premium)';
+    return status;
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-400">
-        Loading Sync Environment...
+      <div className="min-h-screen flex items-center justify-center text-rose-300/50 font-serif-elegant italic">
+        Preparing Your Sanctuary...
       </div>
     );
   }
@@ -209,120 +210,120 @@ function App() {
     );
   }
 
-  // Default Dashboard View
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
-      <div className="max-w-md w-full bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-xl space-y-6">
+      <div className="max-w-md w-full bg-[#160d22]/90 border border-[#2d173d]/60 p-8 rounded-3xl shadow-2xl shadow-rose-950/10 backdrop-blur-md space-y-6">
 
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Secure Connection Active
+        <div className="text-center space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-semibold tracking-wider uppercase">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            Sanctuary Sealed
           </div>
-          <h1 className="text-2xl font-bold text-slate-100">Welcome to Freakasutra</h1>
-          <p className="text-sm text-slate-400">Synchronized Profile Dashboard</p>
+          <h1 className="text-3xl font-serif-elegant text-[#e5b3b3] tracking-wide">
+            Freakasutra
+          </h1>
+          <p className="text-xs text-rose-200/50">Your Private Intimacy Portal</p>
         </div>
 
         {/* PWA Installer Prompt */}
         {showInstallBtn && (
-          <div className="bg-pink-500/10 border border-pink-500/30 rounded-xl p-4 flex flex-col gap-2.5 text-center">
-            <span className="text-xs text-pink-400 font-semibold">Install Freakasutra to your home screen for full standalone mobile play.</span>
+          <div className="bg-[#be123c]/10 border border-[#be123c]/20 rounded-2xl p-4 flex flex-col gap-2 text-center">
+            <span className="text-[11px] text-rose-300">Install Freakasutra to your home screen for full standalone mobile play.</span>
             <button
               onClick={handleInstallPWA}
-              className="bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors"
+              className="bg-gradient-to-r from-[#881337] to-[#be123c] text-rose-100 text-[10px] font-bold py-1.5 px-3 rounded-lg transition-colors"
             >
               Install App Now
             </button>
           </div>
         )}
 
-        {/* 💳 PREMIUM TEASER / PAYWALL BOX */}
+        {/* 💳 PREMIUM UPGRADE BOX */}
         {profile.subscription_status === 'free' && (
-          <div className="bg-slate-900 border border-slate-700/50 rounded-xl p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">⭐</span>
-              <span className="text-xs font-bold text-slate-200 uppercase tracking-wide">Unlock Freakasutra Premium</span>
+          <div className="bg-[#0d0714] border border-[#2d173d]/40 rounded-2xl p-5 space-y-3">
+            <div className="flex items-center gap-2 text-[#d4a373]">
+              <span className="text-md">✨</span>
+              <span className="text-xs font-bold uppercase tracking-wider">Deepen Your Devotion</span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Elevate your intimate connection. Upgrade now to unlock advanced sensory Kink & Fetish decks, unlimited custom cards, and detailed intimacy analytics.
+            <p className="text-[11px] text-rose-200/50 leading-relaxed font-light">
+              Elevate your sensory journey. Unveil advanced sensory Kink & Fetish decks, design custom cards, and unlock your personal Wrapped recaps.
             </p>
             <button
               onClick={handleUpgradeAccount}
               disabled={upgrading}
-              className="w-full bg-pink-600 hover:bg-pink-700 disabled:bg-pink-800 text-white text-xs font-bold py-2 rounded-lg transition-colors"
+              className="w-full bg-gradient-to-r from-[#881337] to-[#be123c] text-rose-100 text-xs font-semibold py-2 rounded-xl transition-colors"
             >
-              {upgrading ? 'Authorizing Mock payment...' : 'Upgrade Now ($8/month)'}
+              {upgrading ? 'Connecting Devotion...' : 'Awaken Premium ($8/month)'}
             </button>
           </div>
         )}
 
-        <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3 text-sm">
-          <div className="flex justify-between border-b border-slate-800 pb-2">
-            <span className="text-slate-400">Account Name:</span>
-            <span className="text-slate-200 font-medium">{profile.display_name}</span>
+        {/* Core Profile Metrics */}
+        <div className="bg-[#0d0714] border border-[#2d173d]/30 rounded-2xl p-4 space-y-3.5 text-xs">
+          <div className="flex justify-between border-b border-[#2d173d]/20 pb-2">
+            <span className="text-rose-300/40 font-semibold tracking-wider uppercase text-[9px]">Intimacy Pseudonym</span>
+            <span className="text-rose-200 font-medium">{profile.display_name}</span>
           </div>
-          <div className="flex justify-between border-b border-slate-800 pb-2">
-            <span className="text-slate-400">Service Class:</span>
-            <span className="text-pink-400 font-semibold uppercase">{profile.subscription_status}</span>
+          <div className="flex justify-between border-b border-[#2d173d]/20 pb-2">
+            <span className="text-rose-300/40 font-semibold tracking-wider uppercase text-[9px]">Sensory Devotion</span>
+            <span className="text-[#d4a373] font-bold uppercase">{formatServiceClass(profile.subscription_status)}</span>
           </div>
-          <div className="flex justify-between border-b border-slate-800 pb-2">
-            <span className="text-slate-400">Sync Status:</span>
+          <div className="flex justify-between border-b border-[#2d173d]/20 pb-2">
+            <span className="text-rose-300/40 font-semibold tracking-wider uppercase text-[9px]">Desire Blueprint</span>
             <span className="text-emerald-400 font-medium">
-              {boundaries ? 'Boundaries Synchronized' : 'Boundaries Unconfigured'}
+              {boundaries ? 'Boundaries Aligned' : 'Unconfigured'}
             </span>
           </div>
 
           <div className="flex flex-col space-y-1">
-            <span className="text-slate-400">Local Derived Encryption Key:</span>
-            <p className="font-mono text-[10px] text-slate-400 break-all bg-slate-950 p-2 rounded border border-slate-800">
+            <span className="text-rose-300/40 font-semibold tracking-wider uppercase text-[9px]">The Whispered Seal (Encryption Key)</span>
+            <p className="font-mono text-[9px] text-rose-300/40 break-all bg-[#09050d] p-2 rounded-lg border border-[#2d173d]/20">
               {encryptionKey}
             </p>
-            <span className="text-[10px] text-emerald-500/80">
-              * Kept client-side only. Used to encrypt/decrypt intimacy metrics before synchronization.
-            </span>
           </div>
         </div>
 
+        {/* Primary Actions */}
         <div className="flex flex-col gap-3">
           {boundaries ? (
             <button
               onClick={() => setShowShuffler(true)}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm shadow-md"
+              className="w-full bg-gradient-to-r from-[#15803d] to-[#166534] hover:from-[#166534] hover:to-[#14532d] text-emerald-100 font-bold py-3 px-4 rounded-xl transition-colors text-sm shadow-md shadow-emerald-950/20"
             >
-              Start Playing / Enter Shuffler
+              Begin the Exploration
             </button>
           ) : (
             <button
               onClick={() => setShowConsentSetup(true)}
-              className="w-full bg-pink-600 hover:bg-pink-700 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm"
+              className="w-full bg-gradient-to-r from-[#881337] to-[#be123c] text-rose-100 font-bold py-3 px-4 rounded-xl transition-colors text-sm shadow-md"
             >
-              Configure Boundaries First
+              Map Your Desires First
             </button>
           )}
 
           {boundaries && (
             <button
               onClick={() => setShowAnalytics(true)}
-              className="w-full bg-slate-100 hover:bg-white text-slate-900 font-bold py-2.5 px-4 rounded-lg transition-colors text-sm shadow-md"
+              className="w-full bg-rose-100/10 hover:bg-rose-100/15 text-rose-200 font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm border border-rose-100/10"
             >
-              View Intimacy Analytics & Wrapped
+              Unveil Your Intimate Echoes
             </button>
           )}
 
           {boundaries && (
             <button
               onClick={() => setShowConsentSetup(true)}
-              className="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+              className="w-full bg-transparent hover:bg-rose-300/5 text-rose-300/70 font-semibold py-2.5 px-4 rounded-xl transition-colors text-sm"
             >
-              Edit Boundary Checklist
+              Refine Your Boundaries & Desires
             </button>
           )}
 
           <button
             onClick={handleLogout}
-            className="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold py-2.5 px-4 rounded-lg transition-colors text-sm"
+            className="w-full bg-transparent hover:bg-rose-950/20 text-rose-400/40 hover:text-rose-400/80 font-semibold py-2 px-4 rounded-xl transition-colors text-[11px]"
           >
-            Disconnect & Lock Account
+            Seal the Sanctuary
           </button>
         </div>
       </div>
